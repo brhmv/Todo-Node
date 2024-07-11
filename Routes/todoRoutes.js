@@ -1,31 +1,24 @@
-const express = require('express');
-const app = express();
-const port = 3000;
-const { v4: uuidv4 } = require('uuid');
+const express = require("express");
+const router = express.Router();
+const Todo = require("../Models/todo");
 const fs = require('fs');
 const path = require('path');
 
-let todos = [
-    { id: uuidv4(), title: 'Learn Express', content: 'Study the basics of Express.js' },
-    { id: uuidv4(), title: 'Learn CRUD', content: 'Create, Read, Update,Delete' },
-    { id: uuidv4(), title: 'Learn Middleware', content: 'Learn  middleware functions in Express.js' }
-];
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.get('/todos', (req, res) => {
+router.get('/todos', async (req, res) => {
     try {
+        console.log("sefsefsefseferf");
+        const todos = await Todo.find();
+        console.log(todos);
         res.json(todos);
     } catch (error) {
         res.status(500).send(`An error occurred: ${error.message}`);
     }
 });
 
-app.get('/todos/:id', (req, res) => {
+router.get('/todos/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const todo = todos.find(item => item.id === id);
+        const todo = await Todo.findOne({ id });
         if (!todo) {
             return res.status(404).send('Todo not found');
         }
@@ -35,53 +28,50 @@ app.get('/todos/:id', (req, res) => {
     }
 });
 
-app.post('/create', (req, res) => {
+router.post('/create', async (req, res) => {
     try {
         const { title, content } = req.body;
-        const newTodo = {
-            id: uuidv4(),
+        const newTodo = new Todo({
             title,
             content
-        };
-        todos.push(newTodo);
+        });
+        await newTodo.save();
         res.status(201).json(newTodo);
     } catch (error) {
         res.status(500).send(`An error occurred: ${error.message}`);
     }
 });
 
-app.put('/todos/:id', (req, res) => {
+router.put('/todos/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { title, content } = req.body;
-        const todo = todos.find(item => item.id === id);
+        const todo = await Todo.findOneAndUpdate({ id }, { title, content }, { new: true });
         if (!todo) {
             return res.status(404).send('Todo not found');
         }
-        if (title) todo.title = title;
-        if (content) todo.content = content;
         res.json(todo);
     } catch (error) {
         res.status(500).send(`An error occurred: ${error.message}`);
     }
 });
 
-app.delete('/todos/:id', (req, res) => {
+router.delete('/todos/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const index = todos.findIndex(item => item.id === id);
-        if (index === -1) {
+        const todo = await Todo.findOneAndDelete({ id });
+        if (!todo) {
             return res.status(404).send('Todo not found');
         }
-        todos.splice(index, 1);
         res.send('Todo deleted');
     } catch (error) {
         res.status(500).send(`An error occurred: ${error.message}`);
     }
 });
 
-app.get('/download', (req, res) => {
+router.get('/download', async (req, res) => {
     try {
+        const todos = await Todo.find();
         const filePath = path.join(__dirname, 'todos.txt');
         const fileContent = todos.map(todo => `ID: ${todo.id}, Title: ${todo.title}, Content: ${todo.content}`).join('\n');
         fs.writeFileSync(filePath, fileContent);
@@ -91,6 +81,4 @@ app.get('/download', (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server running at ${port}`);
-});
+module.exports = router;
