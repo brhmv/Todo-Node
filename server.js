@@ -3,23 +3,18 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const app = express();
 const port = 3000;
-const todoRoutes = require("./Routes/todoRoutes");
-
+const todoRoutes = require("./routes/todoRoutes");
+const authRoutes = require('./routes/authRoutes');
 dotenv.config();
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    // useFindAndModify: false,
-    // useCreateIndex: true
-})
+mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('Connection error:', err));
 
-app.use("/api/v1/todos", todoRoutes);
+app.use("/todos", todoRoutes);
+app.use('/auth', authRoutes);
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
